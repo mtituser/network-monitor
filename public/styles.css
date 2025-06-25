@@ -1,0 +1,253 @@
+/* 全站基本樣式 */
+body {
+  font-family: 'Roboto', sans-serif;
+  background: #f4f6f8;
+  color: #333;
+  margin: 5px;
+  padding: 5px;
+  line-height: 1.3;
+  font-size: 0.95em;
+}
+
+h1 {
+  text-align: center;
+  color: #007acc;
+  margin: 5px 0;
+  font-size: 1.6em;
+}
+
+#statusMessage, #lastUpdate {
+  text-align: center;
+  margin: 4px 0;
+}
+
+#statusMessage { 
+  font-size: 1.1em; 
+  font-weight: 500; 
+}
+
+#lastUpdate { 
+  color: #555; 
+  font-size: 0.9em; 
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 5px;
+  background: #fff;
+  box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+}
+
+th, td {
+  padding: 6px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+th { 
+  background-color: #e9eff5; 
+  color: #007acc; 
+  font-weight: 500; 
+}
+
+.alive { 
+  color: #28a745; 
+  font-weight: bold; 
+}
+
+.offline { 
+  color: #dc3545; 
+  font-weight: bold; 
+}
+
+.warning { 
+  color: #ffc107; 
+  font-weight: bold; 
+}
+
+a, button { 
+  font-family: 'Roboto', sans-serif; 
+}
+
+a { 
+  color: #007acc; 
+  text-decoration: none; 
+  font-size: 0.95em; 
+}
+
+a:hover { 
+  text-decoration: underline; 
+}
+
+button {
+  background: #007acc;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  margin: 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-size: 0.9em;
+}
+
+button:hover { 
+  background: #005fa3; 
+}
+
+/* 固定歷史紀錄區 canvas 尺寸 */
+#historyChart {
+  width: 100% !important;
+  height: 400px !important;
+  display: block;
+}
+
+/* 修正設定管理 Modal 無滾動條問題 */
+#settingsModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  overflow-y: auto;
+}
+
+#settingsModalContent {
+  background: #fff;
+  margin: 2% auto;
+  padding: 6px 8px;
+  border-radius: 3px;
+  width: 95%;
+  max-width: 800px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  right: 8px;
+  top: 4px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.closeBtn:hover { 
+  color: #000; 
+}
+
+.message, .error {
+  text-align: center;
+  font-size: 0.9em;
+  margin-top: 3px;
+}
+
+.message { 
+  color: #28a745; 
+}
+
+.error { 
+  color: #dc3545; 
+}
+
+/* 響應式調整：小螢幕下的字體與寬度 */
+@media only screen and (max-width: 600px) {
+  h1 {
+    font-size: 1.4em;
+  }
+  table, th, td {
+    font-size: 0.85em;
+  }
+  #settingsModalContent {
+    max-width: 95%;
+  }
+  .section {
+    padding: 5px;
+  }
+  button {
+    font-size: 0.85em;
+    padding: 5px 8px;
+  }
+}
+
+/* 監控歷史區與系統日誌區 */
+#historySection, #logSection {
+  margin-top: 20px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+#historySection h3, #logSection h3 {
+  margin-top: 0;
+}
+
+#historyError, #logError {
+  font-size: 0.9em;
+  color: #dc3545;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.settingsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.settingsTable th, .settingsTable td {
+  padding: 5px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+.small-input {
+  width: 100%;
+  padding: 5px;
+  box-sizing: border-box;
+  font-size: 0.9em;
+}
+
+/* 表單排版 */
+.form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.form-row label {
+  flex: 0 0 120px;
+  text-align: right;
+  margin-right: 10px;
+}
+.form-row input {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+.checkbox-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 設定管理區塊 */
+.section {
+  margin: 10px 0;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>網絡監控系統</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <!-- 連結獨立 CSS -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- 引入 Chart.js UMD 版 4.4.0 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* 小螢幕響應式調整 */
+    @media only screen and (max-width: 600px) {
+      h1 { font-size: 1.4em; }
+      table, th, td { font-size: 0.85em; }
+      #settingsModalContent { max-width: 95%; }
+      .section { padding: 5px; }
+      button { font-size: 0.85em; padding: 5px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>網絡監控系統</h1>
+  <div id="statusMessage">📡 監控系統載入中，請稍候...</div>
+  <div id="lastUpdate">最後更新時間：-</div>
+
+  <table id="statusTable">
+    <thead>
+      <tr>
+        <th>分行</th>
+        <th>IP</th>
+        <th>狀態</th>
+        <th>平均延遲 (ms)</th>
+        <th>丟包率</th>
+        <th>評價</th>
+      </tr>
+    </thead>
+    <tbody id="branchStatus">
+      <tr><td colspan="6">⌛ 載入中...</td></tr>
+    </tbody>
+  </table>
+
+  <div style="text-align: center; margin-top: 5px;">
+    <a href="#" onclick="openSettingsModal()">設定管理</a>
+  </div>
+
+  <!-- 監控歷史紀錄展示區 -->
+  <div id="historySection">
+    <h3>監控歷史紀錄（最近7天）</h3>
+    <!-- 若需強制指定尺寸，可在 inline style 指定 -->
+    <canvas id="historyChart" style="width:95%; height:400px;"></canvas>
+    <button type="button" onclick="loadHistoryData()">重新載入歷史數據</button>
+    <button type="button" onclick="exportCSV()">導出 CSV</button>
+    <div id="historyError" class="error"></div>
+  </div>
+
+  <!-- 系統日誌展示區 -->
+  <div id="logSection">
+    <h3>系統日誌</h3>
+    <pre id="logContent" style="background: #f0f0f0; padding: 10px; height: 300px; overflow: auto;"></pre>
+    <button type="button" onclick="loadLogs()">重新載入日誌</button>
+    <div id="logError" class="error"></div>
+  </div>
+
+  <!-- 設定管理 Modal -->
+  <div id="settingsModal">
+    <div id="settingsModalContent">
+      <span class="closeBtn" onclick="closeSettingsModal()">&times;</span>
+      <h2>設定管理</h2>
+      
+      <!-- 分行設定 -->
+      <div class="section" id="modalBranchesSection">
+        <h3>分行設定</h3>
+        <table class="settingsTable" id="branchesSettingsTable">
+          <thead>
+            <tr>
+              <th>分行名稱</th>
+              <th>IP 位址</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- 分行資料動態載入 -->
+          </tbody>
+        </table>
+        <button onclick="addBranchRow()">新增分行</button>
+        <button onclick="saveBranchesSettings()">儲存分行設定</button>
+        <div id="branchesSettingsMsg" class="message"></div>
+      </div>
+      
+      <!-- Recipients 設定 -->
+      <div class="section" id="modalRecipientsSection">
+        <h3>Recipients 設定</h3>
+        <form id="recipientsConfigForm">
+          <div class="form-row">
+            <label for="recipientsToModal">To:</label>
+            <input type="text" id="recipientsToModal" placeholder="例如: a@example.com,b@example.com">
+          </div>
+          <div class="form-row">
+            <label for="recipientsCcModal">Cc:</label>
+            <input type="text" id="recipientsCcModal" placeholder="例如: c@example.com">
+          </div>
+          <div class="form-row">
+            <label for="recipientsBccModal">Bcc:</label>
+            <input type="text" id="recipientsBccModal" placeholder="例如: d@example.com">
+          </div>
+          <div class="form-row button-row">
+            <button type="button" onclick="saveRecipientsModal()">儲存 Recipients 設定</button>
+            <button type="button" onclick="testRecipientsModal()">傳送測試</button>
+          </div>
+          <div id="recipientsModalMsg" class="message"></div>
+        </form>
+      </div>
+      
+      <!-- Email 設定 -->
+      <div class="section" id="modalEmailSection">
+        <h3>Email 設定</h3>
+        <form id="emailConfigForm">
+          <div class="form-row">
+            <label for="emailHostModal">SMTP Host:</label>
+            <input type="text" id="emailHostModal" placeholder="例如: smtp.example.com">
+          </div>
+          <div class="form-row">
+            <label for="emailPortModal">Port:</label>
+            <input type="number" id="emailPortModal" placeholder="例如: 587">
+          </div>
+          <div class="form-row checkbox-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="emailSecureModal">
+              使用安全連線 (Secure)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="emailRequireTLSModal">
+              requireTLS
+            </label>
+          </div>
+          <div class="form-row">
+            <label for="emailUserModal">發件人帳號:</label>
+            <input type="text" id="emailUserModal" placeholder="your-email@example.com">
+          </div>
+          <button type="button" class="medium-btn" onclick="saveEmailConfigModal()">儲存 Email 設定</button>
+          <div id="emailModalMsg" class="message"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 統一提示訊息函式：指定元素 ID、訊息及預設 3000 毫秒後清除
+    function showMessage(elementId, message, timeout = 3000) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.innerText = message;
+        setTimeout(() => {
+          element.innerText = "";
+          element.className = "";
+        }, timeout);
+      }
+    }
+    
+    let historyChart = null;
+    
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        if (data.status === "載入中") {
+          document.getElementById("statusMessage").innerText = "📡 監控系統正在啟動，請稍候...";
+          document.getElementById("lastUpdate").innerText = "最後更新時間：-";
+          return;
+        }
+        document.getElementById("statusMessage").innerText = "✅ 監控系統已啟動";
+        document.getElementById("lastUpdate").innerText = "最後更新時間：" + data.lastUpdate;
+        updateTable(data.branches);
+      } catch (err) {
+        console.error("獲取監控資料失敗：", err);
+        document.getElementById("statusMessage").innerText = "❌ 監控系統連線失敗";
+        document.getElementById("lastUpdate").innerText = "最後更新時間：-";
+      }
+    }
+    
+    function updateTable(branches) {
+      const tbody = document.getElementById("branchStatus");
+      tbody.innerHTML = "";
+      branches.forEach(b => {
+        let statusClass = b.alive ? "alive" : "offline";
+        let statusIcon = b.alive ? "✅" : "❌";
+        if (b.alive && parseFloat(b.avg) > 500 && parseFloat(b.packetLoss.replace("%", "")) > 10) {
+          statusClass = "warning";
+          statusIcon = "⚠️";
+        }
+        tbody.innerHTML += `
+          <tr>
+            <td>${b.branch}</td>
+            <td>${b.ip}</td>
+            <td class="${statusClass}">${statusIcon}</td>
+            <td>${b.avg}</td>
+            <td>${b.packetLoss}</td>
+            <td>${b.evaluation}</td>
+          </tr>
+        `;
+      });
+    }
+    
+    // 每5秒更新狀態
+    fetchStatus();
+    setInterval(fetchStatus, 5000);
+    
+    function openSettingsModal() {
+      document.getElementById("settingsModal").style.display = "block";
+      loadSettings();
+    }
+    function closeSettingsModal() {
+      document.getElementById("settingsModal").style.display = "none";
+    }
+    function loadSettings() {
+      loadBranchesSettings();
+      loadRecipientsModal();
+      loadEmailConfigModal();
+    }
+    
+    // 分行設定相關 (略，保留原有邏輯)
+    function addBranchRowModal(name = "", ip = "") {
+      const tbody = document.getElementById("branchesSettingsTable").querySelector("tbody");
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      const inputName = document.createElement("input");
+      inputName.type = "text";
+      inputName.value = name;
+      inputName.placeholder = "分行名稱";
+      inputName.className = "small-input";
+      tdName.appendChild(inputName);
+      tr.appendChild(tdName);
+      const tdIP = document.createElement("td");
+      const inputIP = document.createElement("input");
+      inputIP.type = "text";
+      inputIP.value = ip;
+      inputIP.placeholder = "IP 位址";
+      inputIP.className = "small-input";
+      tdIP.appendChild(inputIP);
+      tr.appendChild(tdIP);
+      const tdAction = document.createElement("td");
+      const delBtn = document.createElement("button");
+      delBtn.innerText = "刪除";
+      delBtn.onclick = () => { tbody.removeChild(tr); };
+      tdAction.appendChild(delBtn);
+      tr.appendChild(tdAction);
+      tbody.appendChild(tr);
+    }
+    function loadBranchesSettings() {
+      fetch('/api/branches')
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById("branchesSettingsTable").querySelector("tbody");
+          tbody.innerHTML = "";
+          for (let key in data) {
+            addBranchRowModal(key, data[key]);
+          }
+        })
+        .catch(() => {
+          showMessage("branchesSettingsMsg", "讀取分行資料失敗");
+        });
+    }
+    function addBranchRow() {
+      addBranchRowModal();
+    }
+    function saveBranchesSettings() {
+      const tbody = document.getElementById("branchesSettingsTable").querySelector("tbody");
+      const rows = tbody.getElementsByTagName("tr");
+      const branchesObj = {};
+      for (let row of rows) {
+        const inputs = row.getElementsByTagName("input");
+        const branchName = inputs[0].value.trim();
+        const ipAddr = inputs[1].value.trim();
+        if (branchName && ipAddr) {
+          branchesObj[branchName] = ipAddr;
+        }
+      }
+      fetch('/api/branches', {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(branchesObj, null, 2)
+      })
+        .then(res => res.json())
+        .then(() => {
+          showMessage("branchesSettingsMsg", "更新成功");
+          fetchStatus();
+        })
+        .catch(() => {
+          showMessage("branchesSettingsMsg", "更新失敗");
+        });
+    }
+    
+    // Recipients 設定相關 (略，保留原有邏輯)
+    function loadRecipientsModal() {
+      fetch('/api/recipients')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("recipientsToModal").value = (data.to || []).join(",");
+          document.getElementById("recipientsCcModal").value = (data.cc || []).join(",");
+          document.getElementById("recipientsBccModal").value = (data.bcc || []).join(",");
+        })
+        .catch(() => {
+          showMessage("recipientsModalMsg", "讀取 Recipients 資料失敗");
+        });
+    }
+    function saveRecipientsModal() {
+      const config = {
+        to: document.getElementById("recipientsToModal").value.split(",").map(e => e.trim()).filter(e => e),
+        cc: document.getElementById("recipientsCcModal").value.split(",").map(e => e.trim()).filter(e => e),
+        bcc: document.getElementById("recipientsBccModal").value.split(",").map(e => e.trim()).filter(e => e)
+      };
+      fetch('/api/recipients', {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config, null, 2)
+      })
+        .then(res => res.json())
+        .then(() => {
+          showMessage("recipientsModalMsg", "更新成功");
+        })
+        .catch(() => {
+          showMessage("recipientsModalMsg", "更新失敗");
+        });
+    }
+    function testRecipientsModal() {
+      const config = {
+        to: document.getElementById("recipientsToModal").value.split(",").map(e => e.trim()).filter(e => e),
+        cc: document.getElementById("recipientsCcModal").value.split(",").map(e => e.trim()).filter(e => e),
+        bcc: document.getElementById("recipientsBccModal").value.split(",").map(e => e.trim()).filter(e => e)
+      };
+      fetch('/api/testRecipients', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config, null, 2)
+      })
+        .then(res => res.json())
+        .then(data => {
+          showMessage("recipientsModalMsg", data.message || "傳送測試成功");
+        })
+        .catch(() => {
+          showMessage("recipientsModalMsg", "傳送測試失敗");
+        });
+    }
+    
+    // Email 設定相關 (略，保留原有邏輯)
+    function loadEmailConfigModal() {
+      fetch('/api/emailConfig')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("emailHostModal").value = data.host || "";
+          document.getElementById("emailPortModal").value = data.port || "";
+          document.getElementById("emailSecureModal").checked = data.secure || false;
+          document.getElementById("emailRequireTLSModal").checked = data.requireTLS || false;
+          document.getElementById("emailUserModal").value = (data.auth && data.auth.user) || "";
+        })
+        .catch(() => {
+          showMessage("emailModalMsg", "讀取 Email 設定失敗");
+        });
+    }
+    function saveEmailConfigModal() {
+      const config = {
+        host: document.getElementById("emailHostModal").value.trim(),
+        port: parseInt(document.getElementById("emailPortModal").value, 10),
+        secure: document.getElementById("emailSecureModal").checked,
+        requireTLS: document.getElementById("emailRequireTLSModal").checked,
+        auth: { user: document.getElementById("emailUserModal").value.trim() }
+      };
+      fetch('/api/emailConfig', {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config, null, 2)
+      })
+        .then(res => res.json())
+        .then(() => {
+          showMessage("emailModalMsg", "更新成功");
+        })
+        .catch(() => {
+          showMessage("emailModalMsg", "更新失敗");
+        });
+    }
+    
+    // 「監控歷史紀錄」更新與折線圖繪製
+    async function loadHistoryData() {
+      try {
+        const response = await fetch('/historyAPI');
+        const records = await response.json();
+        if (!Array.isArray(records) || records.length === 0) {
+          document.getElementById("historyError").innerText = "目前沒有歷史紀錄資料可顯示";
+          return;
+        }
+        // 將平面資料依 timestamp 分組（假設同一 timestamp 可能有多筆分行記錄）
+        const grouped = {};
+        records.forEach(record => {
+          const ts = record.timestamp;
+          if (!grouped[ts]) {
+            grouped[ts] = [];
+          }
+          grouped[ts].push(record);
+        });
+        // 取得排序後的 timestamp 陣列
+        const timestamps = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
+        //const labels = timestamps.map(ts => new Date(ts).toLocaleTimeString());
+		const labels = timestamps.map(ts => new Date(ts).toLocaleString('zh-HK', { month: "numeric", day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }));
+  
+        // 取得所有不同的分行名稱
+        const branchSet = new Set();
+        records.forEach(record => branchSet.add(record.branch));
+        const branches = Array.from(branchSet);
+        
+        // 為每個分行建立資料陣列
+        const datasets = branches.map(branch => {
+          const data = timestamps.map(ts => {
+            // 於這個時間點找出該分行記錄（假設唯一性）
+            const rec = grouped[ts].find(r => r.branch === branch);
+            if (rec) {
+              const avgVal = parseFloat(rec.avg);
+              return isNaN(avgVal) ? null : avgVal;
+            }
+            return null;
+          });
+          return {
+            label: branch,
+            data,
+            borderColor: getRandomColor(),
+            fill: false,
+            tension: 0.1
+          };
+        });
+  
+        const ctx = document.getElementById("historyChart").getContext("2d");
+        if (historyChart) {
+          historyChart.destroy();
+        }
+        historyChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { title: { display: true, text: "監控延遲走勢" } },
+            interaction: { mode: "index", intersect: false },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+  
+        document.getElementById("historyError").innerText = "";
+      } catch (err) {
+        console.error("讀取監控歷史紀錄失敗:", err);
+        document.getElementById("historyError").innerText = "讀取監控歷史紀錄失敗，請稍後再試。";
+      }
+    }
+    
+    function getRandomColor() {
+      const r = Math.floor(100 + Math.random() * 155);
+      const g = Math.floor(100 + Math.random() * 155);
+      const b = Math.floor(100 + Math.random() * 155);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+    
+    async function loadLogs() {
+      try {
+        const res = await fetch('/logs');
+        const logsText = await res.text();
+        document.getElementById("logContent").innerText = logsText;
+        document.getElementById("logError").innerText = "";
+      } catch (err) {
+        console.error("讀取日誌失敗:", err);
+        document.getElementById("logError").innerText = "讀取日誌失敗，請稍後再試。";
+      }
+    }
+    
+    // 新增「導出 CSV」按鈕功能
+    function exportCSV() {
+      window.location.href = "/exportHistoryCSV";
+    }
+    
+    // 每20秒更新歷史紀錄折線圖
+    setInterval(loadHistoryData, 20000);
+    loadHistoryData();
+  </script>
+</body>
+</html>

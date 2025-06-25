@@ -1,0 +1,8 @@
+set ENCRYPTION_KEY=f889c3d033e51c4c89ce9414840d32b5e09f52302279396506c65e556db1ce2b
+
+set DECRYPTION_KEY=f889c3d033e51c4c89ce9414840d32b5e09f52302279396506c65e556db1ce2b
+
+將修正功能完整整合到現有script
+
+npm install express ping nodemailer
+node server.js

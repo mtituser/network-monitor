@@ -1,0 +1,9 @@
+{
+  "host": "smtp.hgcbizmail.com",
+  "port": 25,
+  "secure": false,
+  "requireTLS": false,
+  "auth": {
+    "user": "ituser@miramartravel.hk"
+  }
+}
